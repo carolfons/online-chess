@@ -22,8 +22,7 @@ public class ChessMatch {
 			for (int j = 0; j < board.getColumns(); j++) {
 				mat[i][j] = (ChessPiece) board.piece(i,j);
 				
-			}
-			
+			}		
 		}
 		return mat;
 	}
@@ -47,6 +46,9 @@ public class ChessMatch {
 	private void validateSourcePosition(Position position) {
 		if(!board.thereIsAPiece(position)) {
 			throw new ChessException("There is no piece on source position" );
+		}
+		if(!board.piece(position).isThereAnyPossibleMove()) {
+			throw new ChessException("There is no moves for the chosen piece");
 		}
 	}
 	
