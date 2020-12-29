@@ -2,6 +2,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import boardgame.Board;
 import boardgame.Piece;
@@ -14,6 +15,7 @@ public class ChessMatch {
 	private int turn;
 	private Color currentPlayer;
 	private Board board;
+	private boolean check;
 	
 	private List<Piece> piecesOnTheBoard = new ArrayList<>();
 	private List<Piece> capturedPieces = new ArrayList<>();
@@ -23,6 +25,7 @@ public class ChessMatch {
 		board = new Board(8,8);
 		turn = 1;
 		currentPlayer = Color.WHITE;
+		check = false;
 		initialSetup();
 	}
 	
@@ -68,12 +71,28 @@ public class ChessMatch {
 		Piece capturedPiece = board.removePiece(target);
 		board.placePiece(p, target);
 		
+		/*
+		 * caso capture uma peça, essa peça é removida do 
+		 * tabuleiro e adicionado na lista de peças capturadas
+		 * */
+	 		
 		if(capturedPiece != null) {
 			piecesOnTheBoard.remove(capturedPiece);
 			capturedPieces.add(capturedPiece);
 		}
-		return capturedPiece;
+		return capturedPiece;		
+	}
+//	método para desfazer o movimento
+	private void undoMove(Position source, Position target, Piece capturedPiece) {
+		Piece p = board.removePiece(target);
+		board.placePiece(p, source);
 		
+		if(capturedPiece != null) {
+			board.placePiece(capturedPiece, target);
+			capturedPieces.remove(capturedPiece);
+			piecesOnTheBoard.add(capturedPiece);
+			
+		}
 	}
 	
 	private void validateSourcePosition(Position position) {
@@ -98,6 +117,26 @@ public class ChessMatch {
 	private void nextTurn() {
 		turn++;
 		currentPlayer = (currentPlayer == Color.WHITE)? Color.BLACK: Color.WHITE;
+	}
+	
+//	Método para inverter as cores, caso seja branca->preta, caso seja preta->branca
+	private Color opponent(Color color) {
+		return (color == Color.WHITE) ? Color.BLACK : Color.WHITE;
+	}
+	
+//	Método para localizar o rei da cor indicada
+	private  ChessPiece king(Color color) {
+//		expressão lambda para filtrar uma lista
+		List<Piece> list = piecesOnTheBoard.stream().filter(x -> ((ChessPiece)x).getColor() == color).collect(Collectors.toList());
+//		percorrendo a lista e retorna caso a peça seja o rei
+		for (Piece p : list) {
+			if(p instanceof King) {
+				return (ChessPiece)p;
+			}
+		}
+		
+		throw new IllegalStateException("There is no "+color+" King on the board!");
+		
 	}
 	
 	private void placeNewPiece(char column, int row, ChessPiece piece) {
