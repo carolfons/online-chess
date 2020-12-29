@@ -37,6 +37,9 @@ public class ChessMatch {
 		return currentPlayer;
 	}
 	
+	public boolean getCheck() {
+		return check;
+	}
 	
 	public ChessPiece[][] getPieces(){
 		ChessPiece[][] mat = new ChessPiece[board.getRows()][board.getColumns()];
@@ -61,6 +64,16 @@ public class ChessMatch {
 		validateSourcePosition(source);
 		validateTargetPosition(source,target);
 		Piece capturedPiece = makeMove(source,target);
+		
+//		testando se o jogador se colocou em xeque
+		if(testCheck(currentPlayer)) {
+			undoMove(source,target,capturedPiece);
+			throw new ChessException("Pay Attention! You can't put yourself in check");
+		}
+		
+//		testando se o jogador fez o movimento de xeque		
+		check = (testCheck(opponent(currentPlayer))) ? true : false;
+		
 		nextTurn();
 		return (ChessPiece)capturedPiece;
 			
@@ -133,10 +146,22 @@ public class ChessMatch {
 			if(p instanceof King) {
 				return (ChessPiece)p;
 			}
+		}	
+		throw new IllegalStateException("There is no "+color+" King on the board!");		
+	}
+	
+//	Método para testar se o rei de uma determinada cor está em xeque
+	private boolean testCheck(Color color) {
+		Position kingPosition = king(color).getChessPosition().toPosition();
+//		pegando a lista de peças do oponente
+		List<Piece> opponentPieces = piecesOnTheBoard.stream().filter(x -> ((ChessPiece)x).getColor() == opponent(color)).collect(Collectors.toList());
+		for (Piece p : opponentPieces) {
+			boolean[][] mat = p.possibleMoves();
+			if(mat[kingPosition.getRow()][kingPosition.getColumn()]) {
+				return true; // rei em xeque
+			}
 		}
-		
-		throw new IllegalStateException("There is no "+color+" King on the board!");
-		
+		return false;
 	}
 	
 	private void placeNewPiece(char column, int row, ChessPiece piece) {
